@@ -27,7 +27,7 @@ object Api {
 object CustomeRejectionHandler {
   import scala.reflect.ClassTag
 
-  private def annonomous(route:Route): Route = complete ( HttpResponse(401, entity = "401 is BaaD M'kay"))
+  private def annonomous(route:Route): Route = complete (HttpResponse(401, entity = "401 is BaaD M'kay"))
 
   implicit def jsonRejectionHandler[T <: Rejection: ClassTag]: RejectionHandler = RejectionHandler.newBuilder().handleAll[T] { rejections =>
     RejectionHandler.default(rejections).map(annonomous).getOrElse(complete { HttpResponse(401, entity = "401 is BaaD M'kay") } )
