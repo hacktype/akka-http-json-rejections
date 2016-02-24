@@ -46,6 +46,6 @@ object MicroService extends App {
   implicit val exec = system.dispatcher
   implicit val mat = ActorMaterializer()
 
-  Http().bindAndHandle(route ,"172.27.20.184", 8080)
+  Http().bindAndHandle(route ,"localhost", 8080)
 
 }
