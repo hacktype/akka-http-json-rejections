@@ -27,7 +27,6 @@ object CustomeRejectionHandler {
   import scala.reflect.ClassTag
   import akka.http.scaladsl.model.MediaTypes.`application/json`
   import scala.concurrent.ExecutionContext.Implicits.global
-  //private def annonomous(route:Route): Route = complete (HttpResponse(404, entity = "401 is BaaD M'kay"))
 
   implicit def jsonRejectionHandler: RejectionHandler =
     RejectionHandler.newBuilder()
@@ -37,15 +36,14 @@ object CustomeRejectionHandler {
           val route: Route = RejectionHandler.default(rejections).getOrElse( complete { HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }""")) } )
 
           route.apply(ctx).map { res : RouteResult => res match {
-              case resp@RouteResult.Complete(HttpResponse(a, b, c, d)) => RouteResult.Complete(HttpResponse(a, b, HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }"""),d))
+              case RouteResult.Complete(HttpResponse(status, header, entity, protocol)) => RouteResult.Complete(HttpResponse(status, header, entity.withContentType(`application/json`), protocol))
               /*ignoring further seq of rejection here, check this*/
-              case resp@RouteResult.Rejected(seqOfRejections) => {
-                RouteResult.Complete( HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }""")))
-              }
+              case RouteResult.Rejected(seqOfRejections) => RouteResult.Complete( HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }""")))
             }
           }
         }
     }
+    .handleNotFound { complete { HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }""")) }}
     .result()
 
 }
