@@ -7,7 +7,10 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.marshalling.PredefinedToResponseMarshallers
 import akka.http.scaladsl.model._
-
+import akka.stream.ActorMaterializer
+import scala.concurrent.duration._
+import scala.util.{Success, Failure}
+import scala.concurrent.Future
 
 object Api {
   val route:Route = get {
@@ -35,10 +38,16 @@ object CustomeRejectionHandler {
 
           val route: Route = RejectionHandler.default(rejections).getOrElse( complete { HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }""")) } )
 
-          route.apply(ctx).map { res : RouteResult => res match {
-              case RouteResult.Complete(HttpResponse(status, header, entity, protocol)) => RouteResult.Complete(HttpResponse(status, header, entity.withContentType(`application/json`), protocol))
+          route.apply(ctx).flatMap { res : RouteResult => res match {
+              case RouteResult.Complete(HttpResponse(status, header, entity, protocol)) => {
+
+                implicit val system = ActorSystem("rejection")
+                implicit val mat = ActorMaterializer()
+
+                entity.toStrict(5.seconds)(mat) map ( entity => RouteResult.Complete(HttpResponse(status, header, HttpEntity(`application/json`, s"""{ "message": entity.data.utf8String }"""), protocol)))
+              }
               /*ignoring further seq of rejection here, check this*/
-              case RouteResult.Rejected(seqOfRejections) => RouteResult.Complete( HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }""")))
+              case RouteResult.Rejected(seqOfRejections) => Future (RouteResult.Complete( HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }"""))))
             }
           }
         }
