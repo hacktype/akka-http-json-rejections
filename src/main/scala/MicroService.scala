@@ -34,7 +34,24 @@ object CustomeRejectionHandler {
   implicit def jsonRejectionHandler: RejectionHandler =
     RejectionHandler.newBuilder()
     .handleAll[Rejection] { rejections =>
-      ctx: RequestContext => {
+
+      def prefixEntity(entity: ResponseEntity): ResponseEntity = entity match {
+        case HttpEntity.Strict(contentType, data) => {
+          import spray.json._
+          val text =  data.utf8String
+          HttpEntity(ContentTypes.`application/json`, s"""{ "message": "$text" }""")
+        }
+        case _ => throw new IllegalStateException("Unexpected entity type")
+      }
+      val route: Route = extractRequestContext { ctx =>
+        mapResponseEntity(prefixEntity) {
+          RejectionHandler.default.apply(rejections).getOrElse{
+            complete(StatusCodes.InternalServerError)
+          }
+        }
+      }
+      route
+      /*ctx: RequestContext => {
 
           val route: Route = RejectionHandler.default(rejections).getOrElse( complete { HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }""")) } )
 
@@ -46,11 +63,12 @@ object CustomeRejectionHandler {
 
                 entity.toStrict(5.seconds)(mat) map ( entity => RouteResult.Complete(HttpResponse(status, header, HttpEntity(`application/json`, s"""{ "message": entity.data.utf8String }"""), protocol)))
               }
-              /*ignoring further seq of rejection here, check this*/
+
               case RouteResult.Rejected(seqOfRejections) => Future (RouteResult.Complete( HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }"""))))
             }
           }
-        }
+
+        }*/
     }
     .handleNotFound { complete { HttpResponse(404, entity = HttpEntity(`application/json`, """{ "message": "404 is BaaD M'kay" }""")) }}
     .result()

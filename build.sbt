@@ -10,11 +10,11 @@ lazy val root = (project in file(".")).
     name := "AkkaHttp",
     libraryDependencies ++= {
       val akkaV       = "2.4.1"
-      val akkaStreamV = "1.0"
+      val akkaStreamV = "2.0.1"
       val scalaTestV  = "2.2.5"
       Seq(
         "com.typesafe.akka" %% "akka-actor"                           % akkaV,
-        "com.typesafe.akka" %% "akka-stream-experimental"             % "2.0.1",
+        "com.typesafe.akka" %% "akka-stream-experimental"             % akkaStreamV,
         "com.typesafe.akka" %% "akka-http-core-experimental"          % akkaStreamV,
         "com.typesafe.akka" %% "akka-http-experimental"               % akkaStreamV,
         "com.typesafe.akka" %% "akka-http-spray-json-experimental"    % akkaStreamV,
